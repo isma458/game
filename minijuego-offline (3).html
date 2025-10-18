@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Juego Educativo - Prototipo</title>
+<style>
+  body {
+    margin: 0;
+    overflow: hidden;
+    background-color: black;
+    font-family: Arial, sans-serif;
+  }
+  canvas {
+    display: block;
+    margin: 0 auto;
+    background-color: black;
+  }
+</style>
+</head>
+<body>
+<canvas id="gameCanvas" width="800" height="400"></canvas>
+
+<script>
+// --- Variables ---
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+let player = { x: 50, y: 300, width: 50, height: 50, dy: 0, saltando: false };
+let obstaculos = [];
+let velocidad = 3; // velocidad inicial
+let puntaje = 0;
+
+// --- Eventos ---
+document.addEventListener('keydown', (e) => {
+  if(e.code === 'Space' && !player.saltando){
+    player.dy = -15;
+    player.saltando = true;
+  }
+});
+
+// --- Crear obstáculos periódicamente ---
+function crearObstaculos() {
+  obstaculos.push({ x: canvas.width, y: 350, width: 30, height: 50 });
+}
+setInterval(() => crearObstaculos(), 2000);
+
+// --- Game Loop ---
+function gameLoop() {
+  // Fondo
+  ctx.fillStyle = 'black';
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  // Estrellas de fondo
+  for (let i = 0; i < 30; i++) {
+    ctx.fillStyle = 'white';
+    ctx.fillRect(Math.random()*canvas.width, Math.random()*canvas.height, 2, 2);
+  }
+
+  // Dibujar jugador
+  ctx.fillStyle = 'yellow';
+  ctx.fillRect(player.x, player.y, player.width, player.height);
+
+  // Física del jugador
+  player.dy += 1; // gravedad
+  player.y += player.dy;
+  if(player.y >= 300){
+    player.y = 300;
+    player.dy = 0;
+    player.saltando = false;
+  }
+
+  // Dibujar obstáculos y colisiones
+  ctx.fillStyle = 'red';
+  obstaculos.forEach((obs, index) => {
+    obs.x -= velocidad;
+    ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
+
+    // Colisión
+    if(player.x < obs.x + obs.width &&
+       player.x + player.width > obs.x &&
+       player.y < obs.y + obs.height &&
+       player.y + player.height > obs.y){
+         alert(`¡Game Over! Puntaje: ${puntaje}`);
+         // Reiniciar juego
+         obstaculos = [];
+         player.y = 300;
+         puntaje = 0;
+         velocidad = 3; // resetear velocidad
+    }
+
+    // Si el obstáculo pasa al jugador
+    if(obs.x + obs.width < 0){
+      obstaculos.splice(index,1);
+      puntaje++;
+      velocidad += 0.5; // Aumenta velocidad del mapa cada obstáculo evitado
+    }
+  });
+
+  // Puntaje
+  ctx.fillStyle = 'white';
+  ctx.font = '20px Arial';
+  ctx.fillText(`Puntaje: ${puntaje}`, 10, 30);
+  ctx.fillText(`Velocidad: ${velocidad.toFixed(1)}`, 10, 60);
+
+  requestAnimationFrame(gameLoop);
+}
+
+gameLoop();
+</script>
+</body>
+</html>
